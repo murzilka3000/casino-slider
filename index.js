@@ -116,7 +116,7 @@ if (slides.length > 0) {
           trigger: ".pinned-section",
           pin: true,
           scrub: 1.2,
-          start: isDesktop ? "top top" : "top -70px",
+          start: isDesktop ? "top top" : "top -170px",
           end: () => `+=${totalTransitions * 100}%`,
           snap: {
             snapTo: "labels",
