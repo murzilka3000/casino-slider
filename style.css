@@ -139,7 +139,7 @@ table {
   box-sizing: border-box;
 }
 
-.wrapper {
+.wrapper3333 {
   max-width: 1408px;
   margin: 0 auto;
 }
@@ -197,7 +197,7 @@ body {
   z-index: 10;
 }
 
-.wrapper {
+.wrapper3333 {
   overflow-x: hidden;
 }
 
@@ -576,13 +576,13 @@ body {
 
 .large-slide,
 .large-slides-track,
-.wrapper {
+.wrapper3333 {
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
 
 .large-slide::-webkit-scrollbar,
 .large-slides-track::-webkit-scrollbar,
-.wrapper::-webkit-scrollbar {
+.wrapper3333::-webkit-scrollbar {
   display: none;
 }
