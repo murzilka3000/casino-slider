@@ -568,4 +568,8 @@ body {
   .cards-container {
     justify-content: center;
   }
+
+  .large-slide {
+    gap: 0;
+  }
 }
