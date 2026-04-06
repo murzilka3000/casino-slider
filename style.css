@@ -188,7 +188,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 50px;
+  /* padding: 0 50px; */
   max-width: 1408px;
 }
 
@@ -244,22 +244,6 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.bg-characters {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 100%;
-  height: auto;
-  z-index: 1;
-  pointer-events: none;
-}
-
-.bg-characters img {
-  width: 100%;
-  display: block;
 }
 
 .nested-slider {
@@ -449,4 +433,139 @@ body {
 
 .large-slide {
   position: relative;
+}
+
+@media screen and (max-width: 1200px) {
+  .slide-title {
+    font-size: 48px;
+  }
+}
+
+@media (max-width: 900px) {
+  .slide-left,
+  .slide-right {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .nested-slider {
+    height: 450px;
+  }
+
+  .crs-card-wrapper {
+    flex-direction: column;
+    width: 280px;
+    padding: 30px 20px;
+    gap: 20px;
+  }
+
+  .cards-container {
+    justify-content: flex-start;
+  }
+
+  .crs-main-txt,
+  .crs-terms-txt {
+    text-align: left;
+  }
+
+  .crs-card-top {
+    align-items: center;
+    min-width: auto;
+  }
+
+  .crs-icons-box {
+    margin-top: 20px;
+    justify-content: center;
+  }
+
+  .crs-card-bottom {
+    align-items: center;
+    text-align: center;
+  }
+
+  .crs-main-txt {
+    align-items: center;
+  }
+
+  .slide-title {
+    font-size: 40px;
+  }
+
+  .slide-subtitle {
+    font-size: 18px;
+  }
+
+  .btn-primary {
+    width: 100%;
+    text-align: center;
+  }
+
+  .large-slide {
+    gap: 30px;
+  }
+}
+
+.large-slide {
+  background-repeat: no-repeat;
+  background-size: contain;
+  background-position: right center;
+}
+
+@media (max-width: 900px) {
+  .large-slide {
+    background-size: 60%;
+    background-position: left center;
+  }
+
+  .slide-left {
+    margin-top: 200px;
+  }
+}
+
+@media screen and (max-width: 756px) {
+  .large-slide {
+    flex-direction: column;
+    max-width: none;
+  }
+
+  .pinned-section,
+  .large-slide {
+    height: auto;
+    width: auto;
+  }
+
+  .pinned-section {
+    overflow: hidden;
+  }
+
+  .large-slides-track {
+    display: flex;
+    width: 100%;
+  }
+
+  .large-slide {
+    flex: 0 0 100%;
+    width: 100%;
+  }
+
+  .nested-slider * {
+    box-shadow: none;
+  }
+
+  .large-slide {
+    background-size: contain;
+    background-position: top 80px center;
+  }
+
+  .slide-title {
+    text-align: center;
+  }
+
+  .slide-subtitle {
+    text-align: center;
+  }
+
+  .cards-container {
+    justify-content: center;
+  }
 }
