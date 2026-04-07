@@ -108,6 +108,7 @@ if (slide) {
       });
 
       if (isDesktop) {
+        // DESKTOP - всё как было
         const tl = gsap.timeline({
           scrollTrigger: {
             trigger: ".pinned-section",
@@ -140,9 +141,30 @@ if (slide) {
           });
         }
       } else {
+        // MOBILE - новая логика
         let currentStep = 0;
         let isAnimating = false;
+        let isScrollLocked = false;
         let observer = null;
+        let scrollY = 0;
+
+        const lockScroll = () => {
+          scrollY = window.scrollY;
+          document.body.style.overflow = "hidden";
+          document.body.style.position = "fixed";
+          document.body.style.top = `-${scrollY}px`;
+          document.body.style.width = "100%";
+          isScrollLocked = true;
+        };
+
+        const unlockScroll = () => {
+          document.body.style.removeProperty("overflow");
+          document.body.style.removeProperty("position");
+          document.body.style.removeProperty("top");
+          document.body.style.removeProperty("width");
+          window.scrollTo(0, scrollY);
+          isScrollLocked = false;
+        };
 
         const animateToStep = (newStep) => {
           if (
@@ -150,8 +172,14 @@ if (slide) {
             newStep < 0 ||
             newStep > totalSteps ||
             newStep === currentStep
-          )
+          ) {
+            // Если пытаемся пролистать за последнюю карточку - разблокируем скролл
+            if (newStep > totalSteps && isScrollLocked) {
+              unlockScroll();
+              if (observer) observer.disable();
+            }
             return;
+          }
 
           isAnimating = true;
           currentStep = newStep;
@@ -163,25 +191,51 @@ if (slide) {
               duration: 0.5,
               ease: "power2.out",
               onComplete: () => {
-                if (cardIndex === 0) isAnimating = false;
+                if (cardIndex === 0) {
+                  isAnimating = false;
+                  // Если достигли последней карточки - разблокируем при следующем свайпе
+                  if (currentStep === totalSteps) {
+                    // Observer будет ждать следующий свайп для разблокировки
+                  }
+                }
               },
             });
           });
         };
 
+        // Отслеживаем когда секция по центру экрана
         ScrollTrigger.create({
           trigger: ".pinned-section",
-          pin: true,
-          start: "top top",
-          end: "+=300%",
+          start: "top center",
+          end: "bottom center",
           onEnter: () => {
-            // Активируем свайпы ТОЛЬКО когда секция запинилась
+            lockScroll();
             if (!observer) {
               observer = Observer.create({
-                target: ".pinned-section",
-                type: "touch,pointer",
-                onDown: () => !isAnimating && animateToStep(currentStep - 1),
-                onUp: () => !isAnimating && animateToStep(currentStep + 1),
+                target: window,
+                type: "wheel,touch,pointer",
+                onUp: () => {
+                  if (!isAnimating) {
+                    if (currentStep < totalSteps) {
+                      animateToStep(currentStep + 1);
+                    } else {
+                      // На последней карточке, свайп вверх = разблокируем
+                      unlockScroll();
+                      if (observer) observer.disable();
+                    }
+                  }
+                },
+                onDown: () => {
+                  if (!isAnimating) {
+                    if (currentStep > 0) {
+                      animateToStep(currentStep - 1);
+                    } else {
+                      // На первой карточке, свайп вниз = разблокируем
+                      unlockScroll();
+                      if (observer) observer.disable();
+                    }
+                  }
+                },
                 tolerance: 10,
                 preventDefault: true,
               });
@@ -189,20 +243,26 @@ if (slide) {
               observer.enable();
             }
           },
-          onLeave: () => {
-            // Деактивируем свайпы когда секция отпинилась
-            if (observer) observer.disable();
-          },
-          onEnterBack: () => {
-            if (observer) observer.enable();
-          },
           onLeaveBack: () => {
+            if (isScrollLocked) {
+              unlockScroll();
+            }
             if (observer) observer.disable();
+            // Сбрасываем на первую карточку
+            currentStep = 0;
+            cards.forEach((card, cardIndex) => {
+              gsap.set(card, getCardState(cardIndex, 0));
+            });
           },
         });
       }
 
-      return () => {};
+      return () => {
+        // Cleanup
+        if (!isDesktop && isScrollLocked) {
+          unlockScroll();
+        }
+      };
     },
   );
 }
