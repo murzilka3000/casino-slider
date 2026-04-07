@@ -108,7 +108,6 @@ if (slide) {
       });
 
       if (isDesktop) {
-        // DESKTOP - всё как было
         const tl = gsap.timeline({
           scrollTrigger: {
             trigger: ".pinned-section",
@@ -141,7 +140,7 @@ if (slide) {
           });
         }
       } else {
-        // MOBILE - новая логика
+        // MOBILE
         let currentStep = 0;
         let isAnimating = false;
         let isScrollLocked = false;
@@ -173,11 +172,6 @@ if (slide) {
             newStep > totalSteps ||
             newStep === currentStep
           ) {
-            // Если пытаемся пролистать за последнюю карточку - разблокируем скролл
-            if (newStep > totalSteps && isScrollLocked) {
-              unlockScroll();
-              if (observer) observer.disable();
-            }
             return;
           }
 
@@ -193,22 +187,19 @@ if (slide) {
               onComplete: () => {
                 if (cardIndex === 0) {
                   isAnimating = false;
-                  // Если достигли последней карточки - разблокируем при следующем свайпе
-                  if (currentStep === totalSteps) {
-                    // Observer будет ждать следующий свайп для разблокировки
-                  }
                 }
               },
             });
           });
         };
 
-        // Отслеживаем когда секция по центру экрана
+        // Триггер блокировки - когда слайдер достигает верха экрана
         ScrollTrigger.create({
-          trigger: ".pinned-section",
-          start: "top center",
-          end: "bottom center",
+          trigger: ".nested-slider", // Триггерим по самому слайдеру, а не по всей секции
+          start: "top 20%", // Когда верх слайдера на 20% от верха экрана
+          end: "bottom 80%",
           onEnter: () => {
+            // Слайдер достиг нужной позиции - блокируем скролл
             lockScroll();
             if (!observer) {
               observer = Observer.create({
@@ -219,7 +210,7 @@ if (slide) {
                     if (currentStep < totalSteps) {
                       animateToStep(currentStep + 1);
                     } else {
-                      // На последней карточке, свайп вверх = разблокируем
+                      // Последняя карточка, свайп вверх = разблокируем и скроллим дальше
                       unlockScroll();
                       if (observer) observer.disable();
                     }
@@ -230,7 +221,7 @@ if (slide) {
                     if (currentStep > 0) {
                       animateToStep(currentStep - 1);
                     } else {
-                      // На первой карточке, свайп вниз = разблокируем
+                      // Первая карточка, свайп вниз = разблокируем и скроллим назад
                       unlockScroll();
                       if (observer) observer.disable();
                     }
@@ -243,7 +234,20 @@ if (slide) {
               observer.enable();
             }
           },
+          onLeave: () => {
+            // Проскроллили дальше - разблокируем
+            if (isScrollLocked) {
+              unlockScroll();
+            }
+            if (observer) observer.disable();
+          },
+          onEnterBack: () => {
+            // Вернулись к слайдеру - снова блокируем
+            lockScroll();
+            if (observer) observer.enable();
+          },
           onLeaveBack: () => {
+            // Проскроллили назад выше слайдера - разблокируем
             if (isScrollLocked) {
               unlockScroll();
             }
@@ -258,7 +262,6 @@ if (slide) {
       }
 
       return () => {
-        // Cleanup
         if (!isDesktop && isScrollLocked) {
           unlockScroll();
         }
