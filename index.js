@@ -66,7 +66,6 @@ if (slide) {
       const getMobileState = (index, currentIndex) => {
         const diff = index - currentIndex;
         if (diff === 0) {
-          // Активная карточка
           return {
             x: 0,
             y: 0,
@@ -77,7 +76,6 @@ if (slide) {
             rotateZ: 0,
           };
         } else if (diff > 0) {
-          // Карточки позади (стопкой как было)
           return {
             x: diff * 12,
             y: diff * 20,
@@ -88,7 +86,6 @@ if (slide) {
             rotateZ: diff * 2,
           };
         } else {
-          // Смахнутая карточка - улетает вверх
           return {
             x: -80,
             y: -500,
@@ -116,34 +113,44 @@ if (slide) {
         scrollTrigger: {
           trigger: ".pinned-section",
           pin: true,
-          scrub: 1,
-          start: "top top",
+          scrub: 1.5,
+          start: isDesktop ? "top top" : "top -300px",
           end: () => `+=${totalSteps * 100}%`,
           snap: {
-            snapTo: 1 / totalSteps,
-            duration: { min: 0.2, max: 0.4 },
-            delay: 0.1,
-            ease: "power1.inOut",
+            snapTo: (progress) => {
+              const step = Math.round(progress * totalSteps);
+              return step / totalSteps;
+            },
+            duration: { min: 0.3, max: 0.6 },
+            delay: 0.2,
+            ease: "power2.inOut",
           },
         },
       });
 
-      // Создаем анимацию ПО ОДНОЙ карточке за шаг
-      for (let step = 0; step < totalSteps; step++) {
-        const progress = step / totalSteps;
-        
+      // Добавля��м лейблы для каждого шага
+      for (let step = 0; step <= totalSteps; step++) {
+        const label = `card${step}`;
+        tl.addLabel(label, step);
+
         cards.forEach((card, cardIndex) => {
-          const newState = getCardState(cardIndex, step + 1);
+          const state = getCardState(cardIndex, step);
           
-          tl.to(
-            card,
-            {
-              ...newState,
-              duration: 1,
-              ease: "power2.inOut",
-            },
-            progress // Каждый шаг в своей позиции
-          );
+          if (step === 0) {
+            // Первый фрейм - устанавливаем начальное состояние
+            gsap.set(card, state);
+          } else {
+            // Анимируем к следующему состоянию
+            tl.to(
+              card,
+              {
+                ...state,
+                duration: 1,
+                ease: "power2.inOut",
+              },
+              step - 1
+            );
+          }
         });
       }
 
