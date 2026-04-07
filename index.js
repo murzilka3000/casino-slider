@@ -1,11 +1,8 @@
 gsap.registerPlugin(ScrollTrigger);
 
-// 1. ВАЖНО: Включаем нормализацию скролла ТОЛЬКО для тач-устройств.
-// Это убивает бешеную инерцию (momentum) и скрытие/появление адресной строки,
-// из-за которых дергаются пины на мобилках.
 ScrollTrigger.normalizeScroll({
   allowNestedScroll: true,
-  type: "touch", // Работает только на телефонах, на ПК скролл мыши остается родным
+  type: "touch",
 });
 
 const slide = document.querySelector(".large-slide");
@@ -21,7 +18,6 @@ if (slide) {
     (context) => {
       let { isDesktop } = context.conditions;
 
-      // ... (getDesktopState оставляем как было) ...
       const getDesktopState = (index, currentIndex) => {
         const diff = index - currentIndex;
         if (diff === 0)
@@ -70,38 +66,43 @@ if (slide) {
         };
       };
 
-      // ... (getMobileState с крутой физикой оставляем как есть) ...
+      // НОВАЯ, РЕАЛИСТИЧНАЯ ФИЗИКА КОЛОДЫ
       const getMobileState = (index, currentIndex) => {
         const diff = index - currentIndex;
+
         if (diff === 0) {
+          // 1. АКТИВНАЯ КАРТА (Верхняя)
           return {
             x: 0,
             y: 0,
             scale: 1,
-            opacity: 1,
+            opacity: 1, // Полностью плотная
             zIndex: 20,
             autoAlpha: 1,
-            rotation: 0,
+            rotationZ: 0,
           };
         } else if (diff > 0) {
+          // 2. КОЛОДА СНИЗУ (Ожидающие карты)
           return {
-            x: diff * 8,
-            y: diff * 16,
-            scale: 1 - diff * 0.06,
-            opacity: 1 - diff * 0.15,
-            zIndex: 20 - diff,
-            autoAlpha: diff > 2 ? 0 : 1,
-            rotation: diff * 2,
+            x: 0, // Лежат ровной стопкой
+            y: diff * 25, // Выглядывают строго снизу (по 25px каждая)
+            scale: 1 - diff * 0.05, // Уходят в глубину
+            opacity: 1, // ВАЖНО: Никакой прозрачности! Они плотные, просто лежат сзади
+            zIndex: 20 - diff, // Спрятаны ПОД активной картой
+            autoAlpha: diff > 2 ? 0 : 1, // Прячем глубокие карты ради оптимизации, но первые 2 полностью видны
+            rotationZ: 0,
           };
         } else {
+          // 3. СМАХНУТАЯ КАРТА
           return {
-            x: -80,
-            y: -window.innerHeight * 0.7,
-            scale: 1.05,
-            opacity: 0,
-            zIndex: 30,
-            autoAlpha: 0,
-            rotation: -15,
+            // Улетает далеко влево и вверх за пределы экрана
+            x: -window.innerWidth * 0.8,
+            y: -window.innerHeight * 0.8,
+            scale: 1, // Не меняет размер, остается "в руке"
+            opacity: 1, // ВАЖНО: Не растворяется в воздухе! Она просто улетает из кадра.
+            zIndex: 30, // СТРОГО поверх колоды
+            autoAlpha: 1, // Никаких затуханий
+            rotationZ: -25, // Красиво закручивается от "броска" влево
           };
         }
       };
@@ -110,13 +111,14 @@ if (slide) {
       const cards = slide.querySelectorAll(".bonus-card");
       const totalSteps = cards.length - 1;
 
+      // Изначальная расстановка
       cards.forEach((card, i) => {
         gsap.set(card, { clearProps: "all" });
         gsap.set(card, getCardState(i, 0));
       });
 
       if (isDesktop) {
-        // ПК ВЕРСИЯ (без изменений)
+        // ДЕСКТОП
         const tl = gsap.timeline({
           scrollTrigger: {
             trigger: ".pinned-section",
@@ -146,26 +148,18 @@ if (slide) {
           });
         }
       } else {
-        // МОБИЛЬНАЯ ВЕРСИЯ - УБИВАЕМ ИНЕРЦИЮ
+        // МОБИЛЬНАЯ ВЕРСИЯ
         const tl = gsap.timeline({
           scrollTrigger: {
             trigger: ".nested-slider",
             pin: ".pinned-section",
             start: "center 55%",
-
-            // 2. ИСКУССТВЕННОЕ ТРЕНИЕ:
-            // Было 100%, стало 250% на каждую карточку.
-            // Теперь чтобы пролететь все карты, нужно скроллить в 2.5 раза дольше.
-            // Инерционный рывок просто "увязнет" в этой дистанции и пролистает максимум 1 карту.
-            end: () => `+=${totalSteps * 250}%`,
-
-            // 3. АМОРТИЗАТОР:
-            // Было 1. Стало 1.5.
-            // Анимация будет чуть плавнее догонять палец, сглаживая резкие системные рывки.
+            end: () => `+=${totalSteps * 250}%`, // Защита от резкой инерции
             scrub: 1.5,
           },
         });
 
+        // Строим анимацию
         for (let step = 1; step <= totalSteps; step++) {
           cards.forEach((card, i) => {
             tl.to(
@@ -173,7 +167,7 @@ if (slide) {
               {
                 ...getCardState(i, step),
                 duration: 1,
-                ease: "none",
+                ease: "none", // Движение пальцем = прямое движение карты
               },
               step - 1,
             );
