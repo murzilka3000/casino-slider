@@ -1,8 +1,8 @@
 gsap.registerPlugin(ScrollTrigger);
 
-const slides = gsap.utils.toArray(".large-slide");
+const slide = document.querySelector(".large-slide");
 
-if (slides.length > 0) {
+if (slide) {
   let mm = gsap.matchMedia();
 
   mm.add(
@@ -66,6 +66,7 @@ if (slides.length > 0) {
       const getMobileState = (index, currentIndex) => {
         const diff = index - currentIndex;
         if (diff === 0) {
+          // Активная карточка
           return {
             x: 0,
             y: 0,
@@ -76,6 +77,7 @@ if (slides.length > 0) {
             rotateZ: 0,
           };
         } else if (diff > 0) {
+          // Карточки позади (стопкой как было)
           return {
             x: diff * 12,
             y: diff * 20,
@@ -86,91 +88,66 @@ if (slides.length > 0) {
             rotateZ: diff * 2,
           };
         } else {
+          // Смахнутая карточка - улетает вверх
           return {
-            x: -120,
-            y: -50,
-            scale: 0.8,
+            x: -80,
+            y: -500,
+            scale: 0.85,
             opacity: 0,
             zIndex: 1,
             autoAlpha: 0,
-            rotateZ: -12,
+            rotateZ: -10,
           };
         }
       };
 
       const getCardState = isDesktop ? getDesktopState : getMobileState;
 
-      let totalTransitions = 0;
-      slides.forEach((slide, index) => {
-        const cardsCount = slide.querySelectorAll(".bonus-card").length;
-        totalTransitions += Math.max(0, cardsCount - 1);
-        if (index < slides.length - 1) {
-          totalTransitions += 1;
-        }
-      });
+      const cards = slide.querySelectorAll(".bonus-card");
+      const totalSteps = cards.length - 1;
 
-      totalTransitions = Math.max(1, totalTransitions);
+      // Инициализация карточек
+      cards.forEach((card, i) => {
+        gsap.set(card, { clearProps: "all" });
+        gsap.set(card, getCardState(i, 0));
+      });
 
       const tl = gsap.timeline({
         scrollTrigger: {
           trigger: ".pinned-section",
           pin: true,
-          scrub: 1.2,
-          start: isDesktop ? "top top" : "top -300px",
-          end: () => `+=${totalTransitions * 100}%`,
+          scrub: 1,
+          start: "top top",
+          end: () => `+=${totalSteps * 100}%`,
           snap: {
-            snapTo: "labels",
-            duration: { min: 0.3, max: 0.6 },
-            delay: 0.05,
-            ease: "power2.inOut",
+            snapTo: 1 / totalSteps,
+            duration: { min: 0.2, max: 0.4 },
+            delay: 0.1,
+            ease: "power1.inOut",
           },
         },
       });
 
-      tl.addLabel("start");
-
-      slides.forEach((slide, slideIndex) => {
-        const cards = slide.querySelectorAll(".bonus-card");
-
-        cards.forEach((card, i) => {
-          gsap.set(card, { clearProps: "all" });
-          gsap.set(card, getCardState(i, 0));
-        });
-
-        for (let step = 1; step < cards.length; step++) {
-          let stepLabel = `s${slideIndex}_c${step}`;
-          tl.addLabel(stepLabel);
-
-          cards.forEach((card, i) => {
-            tl.to(
-              card,
-              {
-                ...getCardState(i, step),
-                duration: 1,
-                ease: "power2.inOut",
-              },
-              stepLabel,
-            );
-          });
-        }
-
-        if (slideIndex < slides.length - 1) {
-          let moveLabel = `move_s${slideIndex + 1}`;
-          tl.addLabel(moveLabel);
-
+      // Создаем анимацию ПО ОДНОЙ карточке за шаг
+      for (let step = 0; step < totalSteps; step++) {
+        const progress = step / totalSteps;
+        
+        cards.forEach((card, cardIndex) => {
+          const newState = getCardState(cardIndex, step + 1);
+          
           tl.to(
-            slides,
+            card,
             {
-              xPercent: -100 * (slideIndex + 1),
-              duration: 1.5,
+              ...newState,
+              duration: 1,
               ease: "power2.inOut",
             },
-            moveLabel,
+            progress // Каждый шаг в своей позиции
           );
-        }
-      });
+        });
+      }
 
       return () => {};
-    },
+    }
   );
 }
