@@ -1,5 +1,13 @@
 gsap.registerPlugin(ScrollTrigger);
 
+// 1. ВАЖНО: Включаем нормализацию скролла ТОЛЬКО для тач-устройств.
+// Это убивает бешеную инерцию (momentum) и скрытие/появление адресной строки,
+// из-за которых дергаются пины на мобилках.
+ScrollTrigger.normalizeScroll({
+  allowNestedScroll: true,
+  type: "touch", // Работает только на телефонах, на ПК скролл мыши остается родным
+});
+
 const slide = document.querySelector(".large-slide");
 
 if (slide) {
@@ -13,6 +21,7 @@ if (slide) {
     (context) => {
       let { isDesktop } = context.conditions;
 
+      // ... (getDesktopState оставляем как было) ...
       const getDesktopState = (index, currentIndex) => {
         const diff = index - currentIndex;
         if (diff === 0)
@@ -61,6 +70,7 @@ if (slide) {
         };
       };
 
+      // ... (getMobileState с крутой физикой оставляем как есть) ...
       const getMobileState = (index, currentIndex) => {
         const diff = index - currentIndex;
         if (diff === 0) {
@@ -69,31 +79,29 @@ if (slide) {
             y: 0,
             scale: 1,
             opacity: 1,
-            zIndex: 10,
+            zIndex: 20,
             autoAlpha: 1,
-            rotateZ: 0,
+            rotation: 0,
           };
         } else if (diff > 0) {
-          // Стопка ожидающих карточек
           return {
-            x: diff * 10,
-            y: diff * 15,
-            scale: 1 - diff * 0.05,
-            opacity: 1 - diff * 0.1,
-            zIndex: 10 - diff,
+            x: diff * 8,
+            y: diff * 16,
+            scale: 1 - diff * 0.06,
+            opacity: 1 - diff * 0.15,
+            zIndex: 20 - diff,
             autoAlpha: diff > 2 ? 0 : 1,
-            rotateZ: diff * 2,
+            rotation: diff * 2,
           };
         } else {
-          // Улетают вверх при скролле
           return {
-            x: -30,
-            y: -window.innerHeight * 0.8,
-            scale: 0.85,
+            x: -80,
+            y: -window.innerHeight * 0.7,
+            scale: 1.05,
             opacity: 0,
-            zIndex: 1,
+            zIndex: 30,
             autoAlpha: 0,
-            rotateZ: -10,
+            rotation: -15,
           };
         }
       };
@@ -108,7 +116,7 @@ if (slide) {
       });
 
       if (isDesktop) {
-        // ПК ВЕРСИЯ (оставляем как было, там всё ок)
+        // ПК ВЕРСИЯ (без изменений)
         const tl = gsap.timeline({
           scrollTrigger: {
             trigger: ".pinned-section",
@@ -138,28 +146,26 @@ if (slide) {
           });
         }
       } else {
-        // МОБИЛЬНАЯ ВЕРСИЯ
+        // МОБИЛЬНАЯ ВЕРСИЯ - УБИВАЕМ ИНЕРЦИЮ
         const tl = gsap.timeline({
           scrollTrigger: {
-            // 1. СМОТРИМ ЗА САМИМ СЛАЙДЕРОМ (карточками)
             trigger: ".nested-slider",
-
-            // 2. А ЗАЛИПАТЬ БУДЕТ ВСЯ СЕКЦИЯ ЦЕЛИКОМ
             pin: ".pinned-section",
-
-            // 3. Секция прокрутится вверх, заголовки уйдут повыше,
-            // и ТОЛЬКО когда карточки доедут до центра экрана (55% от верха), скролл заблокируется!
             start: "center 55%",
 
-            // 4. Длина скролла, чтобы не улетали быстро
-            end: () => `+=${totalSteps * 100}%`,
+            // 2. ИСКУССТВЕННОЕ ТРЕНИЕ:
+            // Было 100%, стало 250% на каждую карточку.
+            // Теперь чтобы пролететь все карты, нужно скроллить в 2.5 раза дольше.
+            // Инерционный рывок просто "увязнет" в этой дистанции и пролистает максимум 1 карту.
+            end: () => `+=${totalSteps * 250}%`,
 
-            // Плавность скролла без лагов и дерганий
-            scrub: 1,
+            // 3. АМОРТИЗАТОР:
+            // Было 1. Стало 1.5.
+            // Анимация будет чуть плавнее догонять палец, сглаживая резкие системные рывки.
+            scrub: 1.5,
           },
         });
 
-        // Строим таймлайн анимации по скроллу
         for (let step = 1; step <= totalSteps; step++) {
           cards.forEach((card, i) => {
             tl.to(
@@ -167,7 +173,7 @@ if (slide) {
               {
                 ...getCardState(i, step),
                 duration: 1,
-                ease: "none", // Оставляем linear (none), так как scrub сам сглаживает анимацию
+                ease: "none",
               },
               step - 1,
             );
