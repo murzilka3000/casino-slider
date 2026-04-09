@@ -18,6 +18,7 @@ if (slide) {
     (context) => {
       let { isDesktop } = context.conditions;
 
+      // --- ЛОГИКА ДЛЯ ДЕСКТОПА ---
       const getDesktopState = (index, currentIndex) => {
         const diff = index - currentIndex;
         if (diff === 0)
@@ -66,43 +67,45 @@ if (slide) {
         };
       };
 
-      // НОВАЯ, РЕАЛИСТИЧНАЯ ФИЗИКА КОЛОДЫ
+      // --- ЛОГИКА ДЛЯ МОБИЛКИ ---
       const getMobileState = (index, currentIndex) => {
         const diff = index - currentIndex;
 
         if (diff === 0) {
-          // 1. АКТИВНАЯ КАРТА (Верхняя)
+          // Активная карта
           return {
             x: 0,
             y: 0,
             scale: 1,
-            opacity: 1, // Полностью плотная
+            opacity: 1,
             zIndex: 20,
             autoAlpha: 1,
             rotationZ: 0,
           };
         } else if (diff > 0) {
-          // 2. КОЛОДА СНИЗУ (Ожидающие карты)
+          // Колода снизу (ожидающие карты)
+          // visualDiff ограничивает сдвиг: только первые 4 карты "выглядывают"
+          const visualDiff = Math.min(diff, 4);
+
           return {
-            x: 0, // Лежат ровной стопкой
-            y: diff * 25, // Выглядывают строго снизу (по 25px каждая)
-            scale: 1 - diff * 0.05, // Уходят в глубину
-            opacity: 1, // ВАЖНО: Никакой прозрачности! Они плотные, просто лежат сзади
-            zIndex: 20 - diff, // Спрятаны ПОД активной картой
-            autoAlpha: diff > 2 ? 0 : 1, // Прячем глубокие карты ради оптимизации, но первые 2 полностью видны
+            x: 0,
+            y: visualDiff * 25, // Сдвиг только для первых четырех
+            scale: 1 - visualDiff * 0.05, // Масштаб уменьшается только до 4-й карты
+            opacity: 1,
+            zIndex: 20 - diff, // Z-index падает у всех для правильной послойности
+            autoAlpha: diff > 4 ? 0 : 1, // Прячем всё, что глубже 4-й карточки
             rotationZ: 0,
           };
         } else {
-          // 3. СМАХНУТАЯ КАРТА
+          // Смахнутая карта (улетает в прозрачность)
           return {
-            // Улетает далеко влево и вверх за пределы экрана
             x: -window.innerWidth * 0.8,
             y: -window.innerHeight * 0.8,
-            scale: 1, // Не меняет размер, остается "в руке"
-            opacity: 1, // ВАЖНО: Не растворяется в воздухе! Она просто улетает из кадра.
-            zIndex: 30, // СТРОГО поверх колоды
-            autoAlpha: 1, // Никаких затуханий
-            rotationZ: -25, // Красиво закручивается от "броска" влево
+            scale: 1,
+            opacity: 0,
+            zIndex: 30,
+            autoAlpha: 0,
+            rotationZ: -25,
           };
         }
       };
@@ -111,14 +114,13 @@ if (slide) {
       const cards = slide.querySelectorAll(".bonus-card");
       const totalSteps = cards.length - 1;
 
-      // Изначальная расстановка
+      // Сброс и начальная расстановка
       cards.forEach((card, i) => {
         gsap.set(card, { clearProps: "all" });
         gsap.set(card, getCardState(i, 0));
       });
 
       if (isDesktop) {
-        // ДЕСКТОП
         const tl = gsap.timeline({
           scrollTrigger: {
             trigger: ".pinned-section",
@@ -148,18 +150,17 @@ if (slide) {
           });
         }
       } else {
-        // МОБИЛЬНАЯ ВЕРСИЯ
+        // МОБИЛЬНАЯ ВЕРСИЯ (с быстрым откликом)
         const tl = gsap.timeline({
           scrollTrigger: {
             trigger: ".nested-slider",
             pin: ".pinned-section",
             start: "center 55%",
-            end: () => `+=${totalSteps * 250}%`, // Защита от резкой инерции
+            end: () => `+=${totalSteps * 100}%`, // Правка: быстрый скролл
             scrub: 1.5,
           },
         });
 
-        // Строим анимацию
         for (let step = 1; step <= totalSteps; step++) {
           cards.forEach((card, i) => {
             tl.to(
@@ -167,7 +168,7 @@ if (slide) {
               {
                 ...getCardState(i, step),
                 duration: 1,
-                ease: "none", // Движение пальцем = прямое движение карты
+                ease: "none",
               },
               step - 1,
             );

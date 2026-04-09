@@ -586,3 +586,11 @@ body {
 .wrapper3333::-webkit-scrollbar {
   display: none;
 }
+
+
+
+@media screen and (max-width: 767px) {
+  .slide-left {
+    z-index: 0;
+  }
+}
