@@ -587,10 +587,22 @@ body {
   display: none;
 }
 
-
-
 @media screen and (max-width: 767px) {
   .slide-left {
     z-index: 0;
+  }
+}
+/* 
+
+
+
+
+
+
+ */
+
+@media screen and (max-width: 450px) {
+  .large-slide {
+    background-image: url("./images/bg-mob.png") !important;
   }
 }
