@@ -155,7 +155,7 @@ if (slide) {
           scrollTrigger: {
             trigger: ".nested-slider",
             pin: ".pinned-section",
-            start: "top 30%",
+            start: "top 35%",
             end: () => `+=${totalSteps * 100}%`, // Правка: быстрый скролл
             scrub: 1.5,
           },
