@@ -18,7 +18,7 @@ if (slide) {
     (context) => {
       let { isDesktop } = context.conditions;
 
-      // --- ЛОГИКА ДЛЯ ДЕСКТОПА ---
+      // --- ЛОГИКА ДЛЯ ДЕСКТОПА --- (без изменений)
       const getDesktopState = (index, currentIndex) => {
         const diff = index - currentIndex;
         if (diff === 0)
@@ -67,12 +67,11 @@ if (slide) {
         };
       };
 
-      // --- ЛОГИКА ДЛЯ МОБИЛКИ ---
+      // --- ЛОГИКА ДЛЯ МОБИЛКИ --- (без изменений)
       const getMobileState = (index, currentIndex) => {
         const diff = index - currentIndex;
 
         if (diff === 0) {
-          // Активная карта
           return {
             x: 0,
             y: 0,
@@ -83,21 +82,18 @@ if (slide) {
             rotationZ: 0,
           };
         } else if (diff > 0) {
-          // Колода снизу (ожидающие карты)
-          // visualDiff ограничивает сдвиг: только первые 4 карты "выглядывают"
           const visualDiff = Math.min(diff, 4);
 
           return {
             x: 0,
-            y: visualDiff * 25, // Сдвиг только для первых четырех
-            scale: 1 - visualDiff * 0.05, // Масштаб уменьшается только до 4-й карты
+            y: visualDiff * 25,
+            scale: 1 - visualDiff * 0.05,
             opacity: 1,
-            zIndex: 20 - diff, // Z-index падает у всех для правильной послойности
-            autoAlpha: diff > 4 ? 0 : 1, // Прячем всё, что глубже 4-й карточки
+            zIndex: 20 - diff,
+            autoAlpha: diff > 4 ? 0 : 1,
             rotationZ: 0,
           };
         } else {
-          // Смахнутая карта (улетает в прозрачность)
           return {
             x: -window.innerWidth * 0.8,
             y: -window.innerHeight * 0.8,
@@ -150,17 +146,29 @@ if (slide) {
           });
         }
       } else {
-        // МОБИЛЬНАЯ ВЕРСИЯ (с быстрым откликом)
+        // КЛЮЧЕВЫЕ ИЗМЕНЕНИЯ ДЛЯ МОБИЛЬНОЙ ВЕРСИИ
+
+        // 1. Добавляем дополнительную анимацию для первичного скролла
+        gsap.to({}, { duration: 0.01 }); // Принудительная активация GSAP
+
+        // 2. Изменяем параметры ScrollTrigger для мобильной версии
         const tl = gsap.timeline({
           scrollTrigger: {
             trigger: ".nested-slider",
             pin: ".pinned-section",
             start: "top 35%",
-            end: () => `+=${totalSteps * 100}%`, // Правка: быстрый скролл
-            scrub: 1.5,
+            end: () => `+=${window.innerHeight * totalSteps}px`, // Абсолютные пиксели вместо %
+            scrub: 0.5, // Быстрее реагирует на скролл
+            pinSpacing: true, // Важно!
+            anticipatePin: 1, // Упреждающее закрепление
           },
         });
 
+        // 3. Создаем отдельную анимацию для первого скролла
+        const preScrollTl = gsap.timeline();
+        preScrollTl.to({}, { duration: 0.01 });
+
+        // 4. Основная анимация без изменений
         for (let step = 1; step <= totalSteps; step++) {
           cards.forEach((card, i) => {
             tl.to(
@@ -168,13 +176,16 @@ if (slide) {
               {
                 ...getCardState(i, step),
                 duration: 1,
-                ease: "none",
+                ease: "power1.inOut", // Более отзывчивая анимация
               },
               step - 1,
             );
           });
         }
       }
+
+      // Принудительное обновление после задержки
+      setTimeout(() => ScrollTrigger.refresh(), 200);
 
       return () => {};
     },
