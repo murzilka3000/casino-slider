@@ -1,8 +1,22 @@
+
+document.addEventListener(
+  "touchmove",
+  (e) => {
+    if (window.scrollY <= 0) {
+      e.preventDefault();
+    }
+  },
+  { passive: false }
+);
+
+
 gsap.registerPlugin(ScrollTrigger);
 
 ScrollTrigger.normalizeScroll({
   allowNestedScroll: true,
-  type: "touch",
+  type: "touch,wheel",  // ← добавить wheel
+  preventDefault: true,  // ← добавить
+  ignore: ScrollTrigger.isTouch ? null : ".your-scroll-element", 
 });
 
 const slide = document.querySelector(".large-slide");

@@ -606,3 +606,11 @@ body {
     background-image: url("./images/bg-mob.png") !important;
   }
 }
+
+html {
+  overscroll-behavior: none;
+}
+
+body {
+  overscroll-behavior: none;
+}
