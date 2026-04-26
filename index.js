@@ -172,7 +172,7 @@ window.addEventListener("load", () => {
             scrollTrigger: {
               trigger: ".nested-slider",
               pin: ".pinned-section",
-              start: "top 35%",
+              start: "top 45%",
               end: () => `+=${totalSteps * 100}%`,
               scrub: 1.5,
               refreshPriority: 1,

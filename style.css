@@ -605,6 +605,10 @@ body {
   .large-slide {
     background-image: url("./images/bg-mob.png") !important;
   }
+
+  .nested-slider {
+    min-height: 400px;
+  }
 }
 
 html {
