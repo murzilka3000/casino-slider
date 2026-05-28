@@ -1,22 +1,43 @@
+let touchStartY = 0;
+
+// Отключаем стандартный bounce-эффект (отскок) в браузерах
 document.documentElement.style.overscrollBehavior = "none";
 document.body.style.overscrollBehavior = "none";
 
+// Запоминаем координату Y при начале касания
+document.addEventListener(
+  "touchstart",
+  (e) => {
+    touchStartY = e.touches[0].clientY;
+  },
+  { passive: true },
+);
+
+// Блокируем движение пальцем только в том случае, если мы на самом верху страницы
+// и пытаемся свайпнуть вниз (чтобы обновить страницу или вызвать bounce-эффект).
+// Свайпы вверх (для прокрутки вниз) блокироваться не будут.
 document.addEventListener(
   "touchmove",
   (e) => {
-    if (window.scrollY <= 0) {
-      e.preventDefault();
+    const touchY = e.touches[0].clientY;
+    if (window.scrollY <= 0 && touchY > touchStartY) {
+      if (e.cancelable) {
+        e.preventDefault();
+      }
     }
   },
   { passive: false },
 );
 
+// Регистрируем плагин ScrollTrigger
 gsap.registerPlugin(ScrollTrigger);
 
+// Настраиваем нормализацию скролла.
+// preventDefault: false предотвращает зависание прокрутки при первом жесте на мобильных устройствах.
 ScrollTrigger.normalizeScroll({
   allowNestedScroll: true,
   type: "touch,wheel",
-  preventDefault: true,
+  preventDefault: false,
 });
 
 window.addEventListener("load", () => {
@@ -38,7 +59,7 @@ window.addEventListener("load", () => {
         // --- ЛОГИКА ДЛЯ ДЕСКТОПА ---
         const getDesktopState = (index, currentIndex) => {
           const diff = index - currentIndex;
-          if (diff === 0)
+          if (diff === 0) {
             return {
               xPercent: 0,
               scale: 1,
@@ -47,7 +68,8 @@ window.addEventListener("load", () => {
               autoAlpha: 1,
               rotateY: 0,
             };
-          if (diff === 1)
+          }
+          if (diff === 1) {
             return {
               xPercent: 40,
               scale: 0.85,
@@ -56,7 +78,8 @@ window.addEventListener("load", () => {
               autoAlpha: 1,
               rotateY: -4,
             };
-          if (diff === -1)
+          }
+          if (diff === -1) {
             return {
               xPercent: -40,
               scale: 0.85,
@@ -65,7 +88,8 @@ window.addEventListener("load", () => {
               autoAlpha: 1,
               rotateY: 4,
             };
-          if (diff > 1)
+          }
+          if (diff > 1) {
             return {
               xPercent: 110,
               scale: 0.6,
@@ -74,6 +98,7 @@ window.addEventListener("load", () => {
               autoAlpha: 0,
               rotateY: -10,
             };
+          }
           return {
             xPercent: -110,
             scale: 0.6,
@@ -89,7 +114,6 @@ window.addEventListener("load", () => {
           const diff = index - currentIndex;
 
           if (diff === 0) {
-            // Активная карта
             return {
               x: 0,
               y: 0,
@@ -100,21 +124,18 @@ window.addEventListener("load", () => {
               rotationZ: 0,
             };
           } else if (diff > 0) {
-            // Колода снизу (ожидающие карты)
-            // visualDiff ограничивает сдвиг: только первые 4 карты "выглядывают"
             const visualDiff = Math.min(diff, 4);
 
             return {
               x: 0,
-              y: visualDiff * 25, // Сдвиг только для первых четырех
-              scale: 1 - visualDiff * 0.05, // Масштаб уменьшается только до 4-й карты
+              y: visualDiff * 25,
+              scale: 1 - visualDiff * 0.05,
               opacity: 1,
-              zIndex: 20 - diff, // Z-index падает у всех для правильной послойности
-              autoAlpha: diff > 4 ? 0 : 1, // Прячем всё, что глубже 4-й карточки
+              zIndex: 20 - diff,
+              autoAlpha: diff > 4 ? 0 : 1,
               rotationZ: 0,
             };
           } else {
-            // Смахнутая карта (улетает в прозрачность)
             return {
               x: -window.innerWidth * 0.8,
               y: -window.innerHeight * 0.8,
@@ -131,7 +152,7 @@ window.addEventListener("load", () => {
         const cards = slide.querySelectorAll(".bonus-card");
         const totalSteps = cards.length - 1;
 
-        // Сброс и начальная расстановка
+        // Сброс и начальная расстановка карточек
         cards.forEach((card, i) => {
           gsap.set(card, { clearProps: "all" });
           gsap.set(card, getCardState(i, 0));
@@ -161,18 +182,24 @@ window.addEventListener("load", () => {
             cards.forEach((card, i) => {
               tl.to(
                 card,
-                { ...getCardState(i, step), duration: 1, ease: "power2.inOut" },
+                {
+                  ...getCardState(i, step),
+                  duration: 1,
+                  ease: "power2.inOut",
+                },
                 stepLabel,
               );
             });
           }
         } else {
-          // МОБИЛЬНАЯ ВЕРСИЯ
+          // --- МОБИЛЬНАЯ ВЕРСИЯ ---
           const tl = gsap.timeline({
             scrollTrigger: {
               trigger: ".nested-slider",
               pin: ".pinned-section",
-              start: "top 45%",
+              // Значение "top top" предотвращает проблемы со стартом прокрутки,
+              // так как блок расположен в самом начале страницы.
+              start: "top top",
               end: () => `+=${totalSteps * 100}%`,
               scrub: 1.5,
               refreshPriority: 1,
