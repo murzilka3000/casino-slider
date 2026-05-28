@@ -1,5 +1,3 @@
-window.scrollTo(0, 10);
-
 document.documentElement.style.overscrollBehavior = "none";
 document.body.style.overscrollBehavior = "none";
 
@@ -22,7 +20,12 @@ ScrollTrigger.normalizeScroll({
 });
 
 document.addEventListener("DOMContentLoaded", () => {
-  ScrollTrigger.refresh();
+
+  if (window.scrollY <= 0) {
+    window.scrollTo(0, 1);
+  }
+
+  ScrollTrigger.refresh(true);
 
   const slide = document.querySelector(".large-slide");
 
