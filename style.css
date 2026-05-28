@@ -533,10 +533,10 @@ body {
     height: auto;
     width: auto;
   }
-
+/* 
   .pinned-section {
     overflow: hidden;
-  }
+  } */
 
   .large-slides-track {
     display: flex;
