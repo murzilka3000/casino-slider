@@ -1,3 +1,5 @@
+window.scrollTo(0, 10);
+
 document.documentElement.style.overscrollBehavior = "none";
 document.body.style.overscrollBehavior = "none";
 
